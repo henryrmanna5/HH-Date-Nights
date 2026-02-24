@@ -831,7 +831,6 @@ async function saveHerDate() {
     hers: true,
   };
   state.herDates.push(newDate);
-  state.unlocked[nextNum] = 'clue';
   await saveState(); burst(); closeAddModal(); renderEnvelopes();
 }
 
