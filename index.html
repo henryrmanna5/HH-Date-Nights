@@ -477,21 +477,69 @@ const BASE_DATES = [
 ];
 
 // ============================================================
-// STATE — persists in localStorage
+// SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL = 'https://avcfkllniydltnlyeyzs.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2Y2ZrbGxuaXlkbHRubHlleXpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NjA3NDQsImV4cCI6MjA4NzUzNjc0NH0.a9_U6ZaxNTDfLZYqiX7YHD7yJVWy02Bys_DqBGPHExE';
+
+const supa = {
+  async get() {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/date_nights_state?id=eq.main&select=data`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const rows = await res.json();
+    return rows?.[0]?.data || {};
+  },
+  async set(data) {
+    await fetch(`${SUPABASE_URL}/rest/v1/date_nights_state?id=eq.main`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ data, updated_at: new Date().toISOString() })
+    });
+  }
+};
+
+// ============================================================
+// STATE — persists in Supabase
 // unlocked: { [num]: 'clue' | 'revealed' }
 // herDates: [ { num, emoji, hamptons, clue, oneliner, hers:true } ]
 // memories: [ { num, note, photo, rating, savedAt } ]
 // ============================================================
-function loadState() {
-  try { return JSON.parse(localStorage.getItem('dnv2') || '{}'); }
-  catch { return {}; }
-}
-function saveState() { localStorage.setItem('dnv2', JSON.stringify(state)); }
+let state = { unlocked: {}, herDates: [], memories: [] };
 
-let state = loadState();
-if (!state.unlocked) state.unlocked = {};
-if (!state.herDates) state.herDates = [];
-if (!state.memories) state.memories = [];
+async function loadState() {
+  showLoading(true);
+  try {
+    const data = await supa.get();
+    state.unlocked  = data.unlocked  || {};
+    state.herDates  = data.herDates  || [];
+    state.memories  = data.memories  || [];
+  } catch(e) {
+    console.error('Failed to load state:', e);
+  }
+  showLoading(false);
+}
+
+async function saveState() {
+  try { await supa.set(state); }
+  catch(e) { console.error('Failed to save state:', e); }
+}
+
+function showLoading(on) {
+  let el = document.getElementById('loadingBar');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loadingBar';
+    el.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#FF6B6B,#C77DFF,#4D96FF);z-index:999;transition:opacity 0.3s;';
+    document.body.appendChild(el);
+  }
+  el.style.opacity = on ? '1' : '0';
+}
 
 let formRating = 0;
 let formPhotoData = null;
@@ -617,7 +665,7 @@ function renderEnvelopes() {
 // ============================================================
 // UNLOCK
 // ============================================================
-function tryUnlock(type) {
+async function tryUnlock(type) {
   const raw = document.getElementById('codeInput').value.trim().toUpperCase();
   const dates = allDates();
 
@@ -627,7 +675,7 @@ function tryUnlock(type) {
     const cur = state.unlocked[match.num] || 'sealed';
     if (cur === 'sealed') {
       state.unlocked[match.num] = 'clue';
-      saveState(); burst();
+      await saveState(); burst();
       showMsg('ok', `🎉 Envelope #${match.num} unlocked! Tap it to read your clue.`);
       document.getElementById('codeInput').value = '';
       renderEnvelopes();
@@ -645,7 +693,7 @@ function tryUnlock(type) {
       showMsg('err', `Unlock the clue for Envelope #${match.num} first!`); return;
     }
     state.unlocked[match.num] = 'revealed';
-    saveState(); burst();
+    await saveState(); burst();
     showMsg('ok', `✨ Tonight's date for Envelope #${match.num} is revealed!`);
     document.getElementById('codeInput').value = '';
     openEnvModal(dates.find(d => d.codeReveal && d.codeReveal.toUpperCase() === raw));
@@ -724,7 +772,7 @@ function pickEmoji(e) {
   document.querySelectorAll('.emoji-opt').forEach(el => el.classList.toggle('picked', el.textContent.trim() === e));
 }
 
-function saveHerDate() {
+async function saveHerDate() {
   const oneliner = document.getElementById('addOneliner').value.trim();
   if (!oneliner) { alert('Give the date a name first!'); return; }
   const clue = document.getElementById('addClue').value.trim();
@@ -742,8 +790,8 @@ function saveHerDate() {
     hers: true,
   };
   state.herDates.push(newDate);
-  state.unlocked[nextNum] = 'clue'; // auto-unlock clue since she made it
-  saveState(); burst(); closeAddModal(); renderEnvelopes();
+  state.unlocked[nextNum] = 'clue';
+  await saveState(); burst(); closeAddModal(); renderEnvelopes();
 }
 
 // ============================================================
@@ -818,13 +866,13 @@ function renderFormStars(n) {
 
 function setRating(n) { formRating = n; renderFormStars(n); }
 
-function saveMem() {
+async function saveMem() {
   const num = parseInt(document.getElementById('memSelect').value);
   if (isNaN(num)) return;
   const mem = { num, note: document.getElementById('memNote').value.trim(), photo: formPhotoData, rating: formRating, savedAt: Date.now() };
   const idx = state.memories.findIndex(m => m.num === num);
   if (idx >= 0) state.memories[idx] = mem; else state.memories.push(mem);
-  saveState(); burst(); closeMemModal();
+  await saveState(); burst(); closeMemModal();
   // switch to timeline tab
   document.querySelectorAll('.nav-btn')[1].dispatchEvent(new MouseEvent('click'));
 }
@@ -867,7 +915,7 @@ function renderRankings() {
 // INIT
 // ============================================================
 initConfetti();
-renderEnvelopes();
+loadState().then(() => renderEnvelopes());
 </script>
 </body>
 </html>
