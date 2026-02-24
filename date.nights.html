@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Date Nights ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --coral: #FF6B6B; --yellow: #FFD93D; --mint: #6BCB77;
+    --sky: #4D96FF; --lavender: #C77DFF; --cream: #FFF9F0;
+    --dark: #1A1A2E; --mid: #555; --light: #999;
+    --card-radius: 20px; --shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); min-height: 100vh; overflow-x: hidden; }
+
+  /* Confetti */
+  .confetti-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .confetti-piece { position: absolute; width: 8px; height: 8px; border-radius: 2px; opacity: 0.15; animation: floatC linear infinite; }
+  @keyframes floatC {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10%, 90% { opacity: 0.15; }
+    100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+  }
+
+  /* Header */
+  header { position: relative; z-index: 10; text-align: center; padding: 48px 24px 28px; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--coral); margin-bottom: 12px; }
+  header h1 { font-family: 'Fraunces', serif; font-size: clamp(34px, 6vw, 60px); font-weight: 900; line-height: 1.1; }
+  header h1 em { color: var(--coral); font-style: italic; }
+  .header-sub { font-size: 14px; color: var(--mid); margin-top: 10px; font-weight: 300; }
+
+  /* Nav */
+  .nav { display: flex; justify-content: center; gap: 8px; padding: 0 24px 32px; position: relative; z-index: 10; flex-wrap: wrap; }
+  .nav-btn { padding: 10px 22px; border-radius: 100px; border: 2px solid #e5e5e5; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: white; color: var(--mid); }
+  .nav-btn.active { background: var(--dark); color: white; border-color: var(--dark); }
+  .nav-btn:hover:not(.active) { border-color: var(--dark); color: var(--dark); }
+
+  .main { position: relative; z-index: 10; max-width: 920px; margin: 0 auto; padding: 0 24px 80px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ===== UNLOCK BAR ===== */
+  .unlock-bar { background: white; border-radius: var(--card-radius); padding: 22px 24px; margin-bottom: 28px; box-shadow: var(--shadow); }
+  .unlock-title { font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--mid); margin-bottom: 14px; }
+  .unlock-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+  .unlock-input {
+    flex: 1; min-width: 120px; padding: 11px 16px; border: 2px solid #eee; border-radius: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 4px;
+    text-transform: uppercase; outline: none; transition: border-color 0.2s;
+  }
+  .unlock-input:focus { border-color: var(--coral); }
+  .unlock-input::placeholder { letter-spacing: 2px; font-weight: 400; }
+  .unlock-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-clue-unlock {
+    padding: 11px 18px; background: var(--yellow); color: var(--dark);
+    border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-clue-unlock:hover { filter: brightness(0.93); transform: translateY(-1px); }
+  .btn-reveal-unlock {
+    padding: 11px 18px; background: var(--coral); color: white;
+    border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .btn-reveal-unlock:hover { filter: brightness(0.93); transform: translateY(-1px); }
+  .unlock-hint { font-size: 12px; color: var(--light); margin-top: 12px; line-height: 1.6; }
+  .unlock-hint b { color: var(--mid); }
+  .unlock-msg { font-size: 13px; padding: 9px 14px; border-radius: 10px; font-weight: 500; margin-top: 12px; display: none; }
+  .unlock-msg.ok { background: #e8f8ed; color: #2a7a42; display: block; }
+  .unlock-msg.err { background: #ffeaea; color: #cc3333; display: block; }
+
+  /* ===== ENVELOPE GRID ===== */
+  .envelope-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
+
+  .env-card { cursor: pointer; transition: transform 0.3s; }
+  .env-card:hover:not(.sealed) { transform: translateY(-5px) rotate(0.8deg); }
+  .env-card.sealed { cursor: default; opacity: 0.82; }
+  .env-inner { border-radius: var(--card-radius); overflow: hidden; box-shadow: var(--shadow); transition: box-shadow 0.3s; }
+  .env-card:hover:not(.sealed) .env-inner { box-shadow: 0 18px 48px rgba(0,0,0,0.18); }
+
+  .env-face { height: 175px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .env-flap { position: absolute; top: 0; left: 0; width: 100%; height: 50%; clip-path: polygon(0 0, 100% 0, 50% 65%); }
+
+  .env-number { font-family: 'Fraunces', serif; font-size: 50px; font-weight: 900; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.18); position: relative; z-index: 2; line-height: 1; }
+  .env-emoji { font-size: 22px; position: relative; z-index: 2; margin-top: 4px; }
+
+  .env-badge { position: absolute; top: 10px; border-radius: 100px; font-size: 10px; font-weight: 700; padding: 3px 10px; letter-spacing: 1px; text-transform: uppercase; z-index: 3; }
+  .badge-lock { right: 10px; background: rgba(255,255,255,0.25); color: white; }
+  .badge-hampton { left: 10px; background: rgba(255,255,255,0.25); color: white; }
+  .badge-her { left: 10px; background: rgba(199,125,255,0.35); color: white; }
+  .badge-stage { bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.25); color: white; white-space: nowrap; }
+
+  .env-bottom { background: white; padding: 14px 16px; }
+  .env-status { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
+  .env-preview { font-family: 'Fraunces', serif; font-size: 13px; font-style: italic; color: var(--mid); line-height: 1.4; }
+  .s-sealed { color: var(--light); }
+  .s-clue { color: #d4a017; }
+  .s-revealed { color: var(--mint); }
+  .s-hers { color: var(--lavender); }
+
+  /* Add her date card */
+  .add-her-card {
+    border: 2px dashed #ddd; border-radius: var(--card-radius); height: 246px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; cursor: pointer; transition: all 0.25s; color: var(--light);
+  }
+  .add-her-card:hover { border-color: var(--lavender); color: var(--lavender); transform: translateY(-4px); }
+  .add-her-card .plus { font-size: 32px; }
+  .add-her-card .lbl { font-size: 14px; font-weight: 600; }
+  .add-her-card .sub { font-size: 12px; text-align: center; max-width: 140px; line-height: 1.5; }
+
+  /* ===== MODALS ===== */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.52); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .overlay.open { opacity: 1; pointer-events: all; }
+
+  /* Envelope detail modal */
+  .env-modal { background: white; border-radius: 28px; max-width: 460px; width: 100%; max-height: 92vh; overflow-y: auto; transform: scale(0.88) translateY(24px); transition: transform 0.35s cubic-bezier(.34,1.56,.64,1); overflow: hidden; }
+  .overlay.open .env-modal { transform: scale(1) translateY(0); }
+
+  .env-modal-top { height: 185px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .env-modal-num { font-family: 'Fraunces', serif; font-size: 70px; font-weight: 900; color: white; line-height: 1; text-shadow: 0 4px 18px rgba(0,0,0,0.2); }
+  .env-modal-emoji { font-size: 34px; margin-top: 6px; }
+  .env-modal-body { padding: 28px; max-height: calc(92vh - 185px); overflow-y: auto; }
+
+  .section-pill { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--light); margin-bottom: 12px; }
+
+  /* Clue block */
+  .clue-block {
+    background: #fffbee; border-radius: 18px; padding: 20px 22px;
+    border-left: 4px solid var(--yellow); margin-bottom: 22px;
+    font-family: 'Fraunces', serif; font-size: 17px; font-style: italic;
+    color: var(--mid); line-height: 1.7;
+  }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #eee; }
+  .divider span { font-size: 18px; }
+
+  /* Reveal — locked state */
+  .reveal-locked-block {
+    border: 2px dashed #eee; border-radius: 18px; padding: 24px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    margin-bottom: 22px; text-align: center;
+  }
+  .reveal-locked-block .lock-big { font-size: 32px; }
+  .reveal-locked-block p { font-size: 13px; color: var(--light); line-height: 1.6; max-width: 260px; }
+
+  /* Reveal — open state */
+  .reveal-open-block {
+    background: linear-gradient(135deg, #fff5f5, #fdf0ff);
+    border-radius: 18px; padding: 24px;
+    text-align: center; margin-bottom: 22px;
+    animation: popIn 0.45s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.82); } to { opacity: 1; transform: scale(1); } }
+  .reveal-text { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; color: var(--dark); line-height: 1.45; }
+
+  .modal-close-btn { width: 100%; padding: 14px; background: var(--dark); color: white; border: none; border-radius: 16px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .modal-close-btn:hover { background: #2c2c3e; }
+
+  /* Add-her-date modal */
+  .add-modal { background: white; border-radius: 28px; max-width: 480px; width: 100%; padding: 32px; max-height: 92vh; overflow-y: auto; transform: scale(0.88) translateY(24px); transition: transform 0.35s cubic-bezier(.34,1.56,.64,1); }
+  .overlay.open .add-modal { transform: scale(1) translateY(0); }
+  .add-modal h2 { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .add-modal .sub { font-size: 13px; color: var(--mid); margin-bottom: 24px; }
+
+  .fgroup { margin-bottom: 20px; }
+  .fgroup label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--mid); margin-bottom: 8px; }
+  .fgroup input, .fgroup textarea, .fgroup select {
+    width: 100%; padding: 12px 16px; border: 2px solid #eee; border-radius: 14px;
+    font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none;
+    transition: border-color 0.2s; background: white; color: var(--dark); resize: vertical;
+  }
+  .fgroup input:focus, .fgroup textarea:focus { border-color: var(--lavender); }
+  .fgroup .hint { font-size: 11px; color: var(--light); margin-top: 6px; }
+
+  .emoji-row { max-height: 220px; overflow-y: auto; border: 2px solid #eee; border-radius: 14px; padding: 12px; }
+  .emoji-cat-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--light); margin: 10px 0 6px; }
+  .emoji-cat-label:first-child { margin-top: 0; }
+  .emoji-cat-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+  .emoji-opt { font-size: 22px; cursor: pointer; padding: 5px 6px; border-radius: 10px; border: 2px solid transparent; transition: all 0.12s; line-height: 1; }
+  .emoji-opt:hover, .emoji-opt.picked { border-color: var(--lavender); background: #f5edff; transform: scale(1.15); }
+
+
+
+  .factions { display: flex; gap: 12px; margin-top: 24px; }
+  .btn-primary { flex: 1; padding: 14px; background: var(--lavender); color: white; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: filter 0.2s; }
+  .btn-primary:hover { filter: brightness(0.9); }
+  .btn-ghost { padding: 14px 20px; background: #f0f0f0; color: var(--mid); border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+  /* ===== TIMELINE ===== */
+  .tl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .tl-title { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 700; }
+  .btn-add-mem { padding: 10px 20px; background: var(--mint); color: white; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-add-mem:hover { filter: brightness(0.9); transform: translateY(-1px); }
+
+  .empty-card { text-align: center; padding: 60px 24px; background: white; border-radius: var(--card-radius); box-shadow: var(--shadow); }
+  .empty-card .ee { font-size: 48px; margin-bottom: 14px; }
+  .empty-card h3 { font-family: 'Fraunces', serif; font-size: 22px; margin-bottom: 8px; }
+  .empty-card p { color: var(--mid); font-size: 14px; }
+
+  .mem-card { background: white; border-radius: var(--card-radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 18px; animation: slideIn 0.4s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  .mem-bar { height: 7px; }
+  .mem-body { padding: 20px 22px; }
+  .mem-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .mem-num { width: 34px; height: 34px; border-radius: 50%; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+  .mem-line { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; flex: 1; line-height: 1.3; }
+  .her-chip { font-size: 10px; background: #f0e8ff; color: var(--lavender); border-radius: 100px; padding: 3px 10px; font-weight: 700; letter-spacing: 1px; }
+  .mem-photo { width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; margin: 10px 0; display: block; }
+  .mem-note { font-size: 15px; color: var(--mid); line-height: 1.65; font-style: italic; margin: 8px 0; }
+  .mem-rating-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+  .r-label { font-size: 12px; font-weight: 600; color: var(--mid); }
+  .star-btn { font-size: 20px; background: none; border: none; cursor: pointer; transition: transform 0.15s; padding: 2px; line-height: 1; }
+  .star-btn:hover { transform: scale(1.3); }
+  .r-num { margin-left: auto; font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; }
+
+  /* Memory form modal */
+  .mem-modal { background: white; border-radius: 28px; max-width: 480px; width: 100%; padding: 32px; max-height: 92vh; overflow-y: auto; transform: scale(0.88) translateY(24px); transition: transform 0.35s cubic-bezier(.34,1.56,.64,1); }
+  .overlay.open .mem-modal { transform: scale(1) translateY(0); }
+  .mem-modal h2 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; margin-bottom: 22px; }
+
+  .photo-drop { width: 100%; height: 110px; border: 2px dashed #ddd; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: var(--light); font-size: 13px; gap: 6px; position: relative; overflow: hidden; transition: border-color 0.2s; }
+  .photo-drop:hover { border-color: var(--coral); color: var(--coral); }
+  .photo-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .photo-preview { width: 100%; height: 110px; object-fit: cover; border-radius: 14px; display: none; }
+  .form-stars { display: flex; gap: 6px; }
+  .form-stars .star-btn { font-size: 28px; }
+
+  /* ===== RANKINGS ===== */
+  .rank-header { text-align: center; margin-bottom: 28px; }
+  .rank-header h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  .rank-header p { color: var(--mid); font-size: 14px; }
+  .rank-item { display: flex; align-items: center; gap: 14px; background: white; border-radius: 18px; padding: 16px 20px; margin-bottom: 12px; box-shadow: var(--shadow); transition: transform 0.2s; animation: slideIn 0.3s ease; }
+  .rank-item:hover { transform: translateX(4px); }
+  .rank-pos { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 900; width: 36px; text-align: center; flex-shrink: 0; }
+  .rank-1 .rank-pos { color: #FFD700; }
+  .rank-2 .rank-pos { color: #C0C0C0; }
+  .rank-3 .rank-pos { color: #CD7F32; }
+  .rank-info { flex: 1; min-width: 0; }
+  .rank-line { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+  .rank-sub { font-size: 12px; color: var(--light); }
+  .rank-bar { height: 5px; background: #f0f0f0; border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .rank-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .rank-score-box { flex-shrink: 0; text-align: center; }
+  .rank-score-n { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: var(--coral); line-height: 1; }
+  .rank-score-l { font-size: 9px; color: var(--light); letter-spacing: 1px; }
+
+  /* Burst */
+  @keyframes burst { 0% { transform: scale(0) rotate(0deg); opacity: 1; } 100% { transform: scale(3) rotate(180deg); opacity: 0; } }
+  .burst-p { position: fixed; pointer-events: none; z-index: 200; border-radius: 2px; animation: burst 0.8s ease forwards; }
+
+  /* Color palette — 14 gradients */
+  .g0{background:linear-gradient(135deg,#FF6B6B,#FF8E53)} .g1{background:linear-gradient(135deg,#4D96FF,#6BB5FF)} .g2{background:linear-gradient(135deg,#6BCB77,#4CAF50)} .g3{background:linear-gradient(135deg,#FFD93D,#FFC107)} .g4{background:linear-gradient(135deg,#C77DFF,#9B51E0)} .g5{background:linear-gradient(135deg,#FF6B6B,#C77DFF)} .g6{background:linear-gradient(135deg,#4D96FF,#6BCB77)} .g7{background:linear-gradient(135deg,#FFD93D,#FF6B6B)} .g8{background:linear-gradient(135deg,#6BCB77,#4D96FF)} .g9{background:linear-gradient(135deg,#C77DFF,#4D96FF)} .g10{background:linear-gradient(135deg,#FF6B6B,#FFD93D)} .g11{background:linear-gradient(135deg,#4D96FF,#C77DFF)} .g12{background:linear-gradient(135deg,#6BCB77,#FFD93D)} .g13{background:linear-gradient(135deg,#FF6B6B,#6BCB77)} .g-her{background:linear-gradient(135deg,#C77DFF,#e0b3ff)}
+  .flap0{background:linear-gradient(180deg,#FF8E53,#FF6B6B)} .flap1{background:linear-gradient(180deg,#6BB5FF,#4D96FF)} .flap2{background:linear-gradient(180deg,#4CAF50,#6BCB77)} .flap3{background:linear-gradient(180deg,#FFC107,#FFD93D)} .flap4{background:linear-gradient(180deg,#9B51E0,#C77DFF)} .flap5{background:linear-gradient(180deg,#C77DFF,#FF6B6B)} .flap6{background:linear-gradient(180deg,#6BCB77,#4D96FF)} .flap7{background:linear-gradient(180deg,#FF6B6B,#FFD93D)} .flap8{background:linear-gradient(180deg,#4D96FF,#6BCB77)} .flap9{background:linear-gradient(180deg,#4D96FF,#C77DFF)} .flap10{background:linear-gradient(180deg,#FFD93D,#FF6B6B)} .flap11{background:linear-gradient(180deg,#C77DFF,#4D96FF)} .flap12{background:linear-gradient(180deg,#FFD93D,#6BCB77)} .flap13{background:linear-gradient(180deg,#6BCB77,#FF6B6B)} .flap-her{background:linear-gradient(180deg,#e0b3ff,#C77DFF)}
+  .bar0{background:#FF6B6B} .bar1{background:#4D96FF} .bar2{background:#6BCB77} .bar3{background:#FFD93D} .bar4{background:#C77DFF} .bar5{background:linear-gradient(90deg,#FF6B6B,#C77DFF)} .bar6{background:linear-gradient(90deg,#4D96FF,#6BCB77)} .bar7{background:linear-gradient(90deg,#FFD93D,#FF6B6B)} .bar8{background:linear-gradient(90deg,#6BCB77,#4D96FF)} .bar9{background:linear-gradient(90deg,#C77DFF,#4D96FF)} .bar10{background:linear-gradient(90deg,#FF6B6B,#FFD93D)} .bar11{background:linear-gradient(90deg,#4D96FF,#C77DFF)} .bar12{background:linear-gradient(90deg,#6BCB77,#FFD93D)} .bar13{background:linear-gradient(90deg,#FF6B6B,#6BCB77)} .bar-her{background:linear-gradient(90deg,#C77DFF,#e0b3ff)}
+
+  @media(max-width:500px) {
+    .envelope-grid { grid-template-columns: 1fr 1fr; }
+    .env-number { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="confetti-bg" id="confettiBg"></div>
+
+<header>
+  <div class="eyebrow">✨ A Gift for You</div>
+  <h1>Our <em>Date Nights</em></h1>
+  <p class="header-sub">Summer 2026 & beyond — one envelope at a time</p>
+</header>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showView('envelopes',this)">📬 Envelopes</button>
+  <button class="nav-btn" onclick="showView('timeline',this)">📸 Our Story</button>
+  <button class="nav-btn" onclick="showView('rankings',this)">🏆 Rankings</button>
+</nav>
+
+<div class="main">
+
+  <!-- ENVELOPES -->
+  <div class="view active" id="view-envelopes">
+    <div class="unlock-bar">
+      <div class="unlock-title">🔑 Enter your code</div>
+      <div class="unlock-row">
+        <input class="unlock-input" id="codeInput" placeholder="TYPE CODE HERE" maxlength="12"
+               onkeydown="if(event.key==='Enter')tryUnlock()">
+        <div class="unlock-btns">
+          <button class="btn-clue-unlock" onclick="tryUnlock('clue')">🔍 Unlock Clue</button>
+          <button class="btn-reveal-unlock" onclick="tryUnlock('reveal')">✨ Reveal Night</button>
+        </div>
+      </div>
+      <div class="unlock-hint">
+        <b>How it works:</b> Mid-week you'll get a <b>clue code</b> to tease what's coming.
+        The night of, you'll get a <b>reveal code</b> to open the full surprise.
+      </div>
+      <div class="unlock-msg" id="unlockMsg"></div>
+    </div>
+    <div class="envelope-grid" id="envelopeGrid"></div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="view" id="view-timeline">
+    <div class="tl-header">
+      <h2 class="tl-title">📸 Our Story</h2>
+      <button class="btn-add-mem" onclick="openMemForm()">+ Add Memory</button>
+    </div>
+    <div id="timelineContent"></div>
+  </div>
+
+  <!-- RANKINGS -->
+  <div class="view" id="view-rankings">
+    <div class="rank-header">
+      <h2>🏆 Date Night Rankings</h2>
+      <p>Ranked by your ratings — gets smarter the more you rate</p>
+    </div>
+    <div id="rankingsContent"></div>
+  </div>
+
+</div>
+
+<!-- Envelope detail modal -->
+<div class="overlay" id="envOverlay" onclick="if(event.target===this)closeEnvModal()">
+  <div class="env-modal" id="envModal">
+    <div class="env-modal-top" id="envModalTop">
+      <div class="env-modal-num" id="envModalNum"></div>
+      <div class="env-modal-emoji" id="envModalEmoji"></div>
+    </div>
+    <div class="env-modal-body">
+      <div class="section-pill">🔍 Your clue this week</div>
+      <div class="clue-block" id="envModalClue"></div>
+      <div class="divider"><span>✨</span></div>
+      <div class="section-pill" id="revealLabel">🎉 The night revealed</div>
+      <div class="reveal-locked-block" id="revealLocked">
+        <div class="lock-big">🔒</div>
+        <p>The reveal is waiting for you.<br>Enter your reveal code when the night arrives.</p>
+      </div>
+      <div class="reveal-open-block" id="revealOpen" style="display:none">
+        <div class="reveal-text" id="envModalOneliner"></div>
+      </div>
+      <button class="modal-close-btn" onclick="closeEnvModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add her date modal -->
+<div class="overlay" id="addOverlay" onclick="if(event.target===this)closeAddModal()">
+  <div class="add-modal">
+    <h2>Add Your Own 💜</h2>
+    <p class="sub">Got a date idea? Drop it in and we'll make it happen.</p>
+
+    <div class="fgroup">
+      <label>What's the vibe? *</label>
+      <input id="addOneliner" placeholder="e.g. Rooftop drinks and a terrible movie">
+      <div class="hint">This becomes the one-liner on the envelope — keep it fun and short.</div>
+    </div>
+
+    <div class="fgroup">
+      <label>Pick an emoji</label>
+      <div class="emoji-row" id="emojiRow"></div>
+    </div>
+
+    <div class="fgroup">
+      <label>Where?</label>
+      <input id="addLocation" placeholder="e.g. West Village, The Hamptons, Brooklyn…">
+      <div class="hint">Be as specific or vague as you want.</div>
+    </div>
+
+    <div class="fgroup">
+      <label>Write yourself a clue <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <textarea id="addClue" rows="2" placeholder="Hint at what you're thinking without giving it all away..."></textarea>
+    </div>
+
+    <div class="factions">
+      <button class="btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveHerDate()">Add it 💜</button>
+    </div>
+  </div>
+</div>
+
+<!-- Memory form modal -->
+<div class="overlay" id="memOverlay" onclick="if(event.target===this)closeMemModal()">
+  <div class="mem-modal">
+    <h2>Add a Memory ✨</h2>
+    <div class="fgroup">
+      <label>Which date?</label>
+      <select id="memSelect"></select>
+    </div>
+    <div class="fgroup">
+      <label>Photo</label>
+      <div class="photo-drop" id="photoDropArea">
+        <span>📷</span><span>Tap to add a photo</span>
+        <input type="file" accept="image/*" onchange="handlePhoto(this)">
+      </div>
+      <img class="photo-preview" id="photoPreview">
+    </div>
+    <div class="fgroup">
+      <label>A note about the night</label>
+      <textarea id="memNote" rows="3" placeholder="What made it special..."></textarea>
+    </div>
+    <div class="fgroup">
+      <label>Your rating</label>
+      <div class="form-stars" id="formStars"></div>
+    </div>
+    <div class="factions">
+      <button class="btn-ghost" onclick="closeMemModal()">Cancel</button>
+      <button class="btn-primary" style="background:var(--mint)" onclick="saveMem()">Save Memory 💾</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// BASE DATES — your 14 planned nights
+// Each has codeClue (mid-week) and codeReveal (night-of)
+// ============================================================
+const BASE_DATES = [
+  { num:1,  emoji:"🥟", hamptons:false,
+    clue: "Bring your appetite and a competitive spirit. Bonus points if you know how to say 'one more please' in Mandarin.",
+    oneliner: "Four neighborhoods. One scorecard. May the best dumpling win.",
+    codeClue:"DUMPLING", codeReveal:"D2" },
+  { num:2,  emoji:"🎨", hamptons:false,
+    clue: "This week you'll make something with your hands. It probably won't be perfect. That's the point.",
+    oneliner: "Get your hands dirty. Clean up over wine.",
+    codeClue:"POTTERY", codeReveal:"P2" },
+  { num:3,  emoji:"🚣", hamptons:false,
+    clue: "This week requires nothing but an afternoon. Leave your plans at home.",
+    oneliner: "Central Park, a bottle of something cold, and nowhere to be.",
+    codeClue:"ROWBOAT", codeReveal:"R2" },
+  { num:4,  emoji:"🎳", hamptons:false,
+    clue: "This week involves friendly competition, comfort food, and Brooklyn. Wear something you can move in.",
+    oneliner: "Strikes, brisket, and Brooklyn. In that order.",
+    codeClue:"BRISKET", codeReveal:"B2" },
+  { num:5,  emoji:"🎆", hamptons:true,
+    clue: "This week, we're leaving the city. Pack a swimsuit, something warm for the evening, and your patriotism.",
+    oneliner: "Fireworks over the Atlantic. No city required.",
+    codeClue:"JULY4TH", codeReveal:"J2" },
+  { num:6,  emoji:"🍝", hamptons:false,
+    clue: "This week involves an apron, flour on your face, and a meal you made yourself.",
+    oneliner: "Flour, eggs, and a little chaos.",
+    codeClue:"PASTA", codeReveal:"PA2" },
+  { num:7,  emoji:"🎸", hamptons:true,
+    clue: "This week we're heading east. Dinner first, then a room so small you'll feel like you know the band personally.",
+    oneliner: "A tiny stage. A legendary room. Dress however you want.",
+    codeClue:"TALKHOUSE", codeReveal:"T2" },
+  { num:8,  emoji:"⚾", hamptons:false,
+    clue: "This week is quintessentially New York. Pick a side. It matters more than you think.",
+    oneliner: "Peanuts optional. Rivalries mandatory.",
+    codeClue:"BASEBALL", codeReveal:"BA2" },
+  { num:9,  emoji:"🥾", hamptons:false,
+    clue: "This week requires good shoes and no agenda. The view at the top will be worth it.",
+    oneliner: "Summit views, Hudson River, lunch somewhere with a porch.",
+    codeClue:"SUMMIT", codeReveal:"S2" },
+  { num:10, emoji:"🏓", hamptons:false,
+    clue: "This week involves a sport you may have never played and a sandwich you definitely need. Trash talk encouraged.",
+    oneliner: "A paddle, a pastrami sandwich, and your best trash talk.",
+    codeClue:"PICKLE", codeReveal:"PI2" },
+  { num:11, emoji:"🦞", hamptons:true,
+    clue: "This week requires a ferry. And a bike. And an empty afternoon. We're going somewhere that feels like a secret.",
+    oneliner: "Ferry to an island. Bike through the woods. Eat something from the sea.",
+    codeClue:"SHELTER", codeReveal:"SH2" },
+  { num:12, emoji:"🧪", hamptons:false,
+    clue: "This week you'll learn something unexpected. Wear clothes you don't mind getting a little experimental in.",
+    oneliner: "Science. Cocktails. Possibly both at once.",
+    codeClue:"SCIENCE", codeReveal:"SC2" },
+  { num:13, emoji:"🗺️", hamptons:false,
+    clue: "This week bring $20, your best eye for the bizarre, and zero expectations. The only rule is you have to find something for me.",
+    oneliner: "A flea market. $20. Whoever picks the worst gift buys brunch.",
+    codeClue:"FLEAMKT", codeReveal:"F2" },
+  { num:14, emoji:"🎾", hamptons:false,
+    clue: "This week is a double header. World class sport, then world class music. Save some energy for the second act.",
+    oneliner: "World-class tennis by day. West Village jazz by night.",
+    codeClue:"USOPEN", codeReveal:"U2" },
+];
+
+// ============================================================
+// STATE — persists in localStorage
+// unlocked: { [num]: 'clue' | 'revealed' }
+// herDates: [ { num, emoji, hamptons, clue, oneliner, hers:true } ]
+// memories: [ { num, note, photo, rating, savedAt } ]
+// ============================================================
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('dnv2') || '{}'); }
+  catch { return {}; }
+}
+function saveState() { localStorage.setItem('dnv2', JSON.stringify(state)); }
+
+let state = loadState();
+if (!state.unlocked) state.unlocked = {};
+if (!state.herDates) state.herDates = [];
+if (!state.memories) state.memories = [];
+
+let formRating = 0;
+let formPhotoData = null;
+let pickedEmoji = '🌸';
+
+// All dates = base + her additions
+function allDates() {
+  return [...BASE_DATES, ...state.herDates];
+}
+
+function colorKey(d, part) {
+  if (d.hers) return part + '-her';
+  const i = (d.num - 1) % 14;
+  return part + i;
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+function initConfetti() {
+  const bg = document.getElementById('confettiBg');
+  const cols = ['#FF6B6B','#FFD93D','#6BCB77','#4D96FF','#C77DFF','#FFB347'];
+  for (let i = 0; i < 28; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.width = (Math.random() * 6 + 4) + 'px';
+    el.style.height = (Math.random() * 6 + 4) + 'px';
+    el.style.background = cols[Math.floor(Math.random() * cols.length)];
+    el.style.animationDuration = (Math.random() * 15 + 10) + 's';
+    el.style.animationDelay = (Math.random() * 12) + 's';
+    bg.appendChild(el);
+  }
+}
+
+function burst() {
+  const cols = ['#FF6B6B','#FFD93D','#6BCB77','#4D96FF','#C77DFF'];
+  for (let i = 0; i < 22; i++) {
+    const el = document.createElement('div');
+    el.className = 'burst-p';
+    el.style.left = (30 + Math.random() * 40) + 'vw';
+    el.style.top  = (20 + Math.random() * 35) + 'vh';
+    el.style.width = (Math.random() * 10 + 5) + 'px';
+    el.style.height = (Math.random() * 10 + 5) + 'px';
+    el.style.background = cols[Math.floor(Math.random() * cols.length)];
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    el.style.animationDelay = (Math.random() * 0.4) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+  }
+}
+
+// ============================================================
+// VIEWS
+// ============================================================
+function showView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'timeline') renderTimeline();
+  if (name === 'rankings') renderRankings();
+}
+
+// ============================================================
+// ENVELOPES
+// ============================================================
+function renderEnvelopes() {
+  const grid = document.getElementById('envelopeGrid');
+  grid.innerHTML = '';
+
+  allDates().forEach(d => {
+    const status = state.unlocked[d.num] || 'sealed';
+    const isSealed = status === 'sealed';
+
+    const gClass  = colorKey(d, 'g');
+    const fClass  = colorKey(d, 'flap');
+
+    let statusLabel, statusClass, preview;
+    if (status === 'sealed') {
+      statusLabel = '● SEALED'; statusClass = 's-sealed';
+      preview = d.hers ? 'Her idea — locked and waiting...' : 'Unlock with your weekly code...';
+    } else if (status === 'clue') {
+      statusLabel = '● CLUE UNLOCKED'; statusClass = 's-clue';
+      preview = 'You have a clue — tap to read';
+    } else {
+      statusLabel = '✓ NIGHT REVEALED'; statusClass = 's-revealed';
+      preview = d.oneliner.substring(0, 46) + '…';
+    }
+    if (d.hers && status === 'sealed') statusClass = 's-hers';
+
+    const card = document.createElement('div');
+    card.className = 'env-card' + (isSealed ? ' sealed' : '');
+    card.innerHTML = `
+      <div class="env-inner">
+        <div class="env-face ${gClass}">
+          <div class="env-flap ${fClass}"></div>
+          ${isSealed ? '<span class="env-badge badge-lock">🔒 sealed</span>' : ''}
+          ${d.hamptons && !d.hers ? '<span class="env-badge badge-hampton">🌊 Hamptons</span>' : ''}
+          ${d.hers ? '<span class="env-badge badge-her">Her Pick 💜</span>' : ''}
+          ${!isSealed ? `<span class="env-badge badge-stage">${status === 'clue' ? '🔍 Clue inside' : '✨ Revealed'}</span>` : ''}
+          <div class="env-number">${d.num}</div>
+          <div class="env-emoji">${d.emoji}</div>
+        </div>
+        <div class="env-bottom">
+          <div class="env-status ${statusClass}">${statusLabel}</div>
+          <div class="env-preview">${preview}</div>
+        </div>
+      </div>`;
+
+    if (!isSealed) card.onclick = () => openEnvModal(d);
+    grid.appendChild(card);
+  });
+
+  // Her "add" card
+  const add = document.createElement('div');
+  add.className = 'add-her-card';
+  add.innerHTML = `<div class="plus">💜</div><div class="lbl">Add Your Own</div><div class="sub">Got a date idea? Add it to the box.</div>`;
+  add.onclick = openAddModal;
+  grid.appendChild(add);
+}
+
+// ============================================================
+// UNLOCK
+// ============================================================
+function tryUnlock(type) {
+  const raw = document.getElementById('codeInput').value.trim().toUpperCase();
+  const dates = allDates();
+
+  if (type === 'clue') {
+    const match = dates.find(d => d.codeClue && d.codeClue.toUpperCase() === raw);
+    if (!match) { showMsg('err', "That doesn't match a clue code — double check it!"); return; }
+    const cur = state.unlocked[match.num] || 'sealed';
+    if (cur === 'sealed') {
+      state.unlocked[match.num] = 'clue';
+      saveState(); burst();
+      showMsg('ok', `🎉 Envelope #${match.num} unlocked! Tap it to read your clue.`);
+      document.getElementById('codeInput').value = '';
+      renderEnvelopes();
+    } else {
+      showMsg('ok', `Envelope #${match.num} is already unlocked!`);
+    }
+    return;
+  }
+
+  if (type === 'reveal') {
+    const match = dates.find(d => d.codeReveal && d.codeReveal.toUpperCase() === raw);
+    if (!match) { showMsg('err', "That doesn't match a reveal code — check again!"); return; }
+    const cur = state.unlocked[match.num] || 'sealed';
+    if (cur === 'sealed') {
+      showMsg('err', `Unlock the clue for Envelope #${match.num} first!`); return;
+    }
+    state.unlocked[match.num] = 'revealed';
+    saveState(); burst();
+    showMsg('ok', `✨ Tonight's date for Envelope #${match.num} is revealed!`);
+    document.getElementById('codeInput').value = '';
+    openEnvModal(dates.find(d => d.codeReveal && d.codeReveal.toUpperCase() === raw));
+    renderEnvelopes();
+    return;
+  }
+}
+
+function showMsg(type, text) {
+  const el = document.getElementById('unlockMsg');
+  el.className = 'unlock-msg ' + type;
+  el.textContent = text;
+  setTimeout(() => el.className = 'unlock-msg', 4000);
+}
+
+// ============================================================
+// ENVELOPE MODAL
+// ============================================================
+function openEnvModal(d) {
+  const gClass = colorKey(d, 'g');
+  document.getElementById('envModalTop').className = 'env-modal-top ' + gClass;
+  document.getElementById('envModalNum').textContent = d.num;
+  document.getElementById('envModalEmoji').textContent = d.emoji;
+  document.getElementById('envModalClue').textContent = d.clue || 'A surprise is waiting for you…';
+
+  const isRevealed = state.unlocked[d.num] === 'revealed';
+  document.getElementById('revealLocked').style.display = isRevealed ? 'none' : 'flex';
+  document.getElementById('revealOpen').style.display   = isRevealed ? 'block' : 'none';
+  if (isRevealed) {
+    document.getElementById('envModalOneliner').textContent = d.oneliner;
+  }
+
+  document.getElementById('envOverlay').classList.add('open');
+}
+
+function closeEnvModal() {
+  document.getElementById('envOverlay').classList.remove('open');
+}
+
+// ============================================================
+// ADD HER DATE MODAL
+// ============================================================
+const EMOJI_KEYBOARD = {
+  'Food & Drink': ['🍕','🌮','🍜','🍣','🥩','🍔','🌯','🥗','🍝','🫕','🥘','🍲','🫔','🥟','🍱','🍛','🍤','🦞','🦀','🦑','🥂','🍾','🍷','🍸','🍺','🧃','☕','🧋','🍦','🧁','🎂','🍩','🍪','🍫','🍓','🍑','🫐','🍉'],
+  'Activities': ['🎨','🎬','🎭','🎲','🎯','🎪','🎡','🎢','🎠','🎰','🎳','🏓','🎸','🎵','🎶','🎤','🎻','🥁','🎹','🎺','🏄','🚴','🧗','🤿','⛷️','🎿','🏋️','🤸','🧘','🛼','🛹','🛶','🚣','🧩','🪄','🎮','🕹️','🎻'],
+  'Nature & Travel': ['🌸','🌿','🌲','🌅','🌊','🏖️','⛰️','🏕️','🌙','⭐','🌈','🌺','🌻','🌷','🍂','🍁','🌾','🌴','🐚','🦋','🌍','🗺️','🏝️','🌋','🌄','🏔️','🌠','🌌','🎑','🌃'],
+  'Romance': ['💕','💖','💝','💞','💫','✨','🥰','😍','💌','💐','🕯️','🛁','🌹','🫦','💋','🥂','🎁','🛍️','💎','🪷','🫶','❤️','🩷','🧡','💛','💚','💙','💜'],
+  'Misc': ['🚀','🎈','🪄','🎩','👑','🪸','🦄','🐼','🌮','🍄','🏺','🪆','🪅','🎊','🎉','🎀','🎏','🪬','🧿','🔮','🪩','💈','🎑','🌐','🗽','🗼','🏛️','🎡'],
+};
+
+function openAddModal() {
+  pickedEmoji = '🌸';
+  document.getElementById('addOneliner').value = '';
+  document.getElementById('addLocation').value = '';
+  document.getElementById('addClue').value = '';
+  buildEmojiKeyboard();
+  document.getElementById('addOverlay').classList.add('open');
+}
+
+function closeAddModal() {
+  document.getElementById('addOverlay').classList.remove('open');
+}
+
+function buildEmojiKeyboard() {
+  const container = document.getElementById('emojiRow');
+  container.innerHTML = Object.entries(EMOJI_KEYBOARD).map(([cat, emojis]) => `
+    <div class="emoji-cat-label">${cat}</div>
+    <div class="emoji-cat-row">${emojis.map(e =>
+      `<span class="emoji-opt${e === pickedEmoji ? ' picked' : ''}" onclick="pickEmoji('${e}')" title="${e}">${e}</span>`
+    ).join('')}</div>
+  `).join('');
+}
+
+function pickEmoji(e) {
+  pickedEmoji = e;
+  document.querySelectorAll('.emoji-opt').forEach(el => el.classList.toggle('picked', el.textContent.trim() === e));
+}
+
+function saveHerDate() {
+  const oneliner = document.getElementById('addOneliner').value.trim();
+  if (!oneliner) { alert('Give the date a name first!'); return; }
+  const clue = document.getElementById('addClue').value.trim();
+  const location = document.getElementById('addLocation').value.trim();
+  const nextNum = Math.max(...allDates().map(d => d.num), 0) + 1;
+  const newDate = {
+    num: nextNum,
+    emoji: pickedEmoji,
+    location: location || null,
+    hamptons: /hamptons|east hampton|southampton|montauk|amagansett|bridgehampton/i.test(location),
+    clue: clue || 'A surprise from me — stay tuned!',
+    oneliner,
+    codeClue:   'HER' + nextNum,
+    codeReveal: 'HR'  + nextNum,
+    hers: true,
+  };
+  state.herDates.push(newDate);
+  state.unlocked[nextNum] = 'clue'; // auto-unlock clue since she made it
+  saveState(); burst(); closeAddModal(); renderEnvelopes();
+}
+
+// ============================================================
+// TIMELINE
+// ============================================================
+function renderTimeline() {
+  const el = document.getElementById('timelineContent');
+  if (!state.memories.length) {
+    el.innerHTML = `<div class="empty-card"><div class="ee">📷</div><h3>No memories yet</h3><p>After each date, add a photo and a note to build your story.</p></div>`;
+    return;
+  }
+  const sorted = [...state.memories].sort((a, b) => b.savedAt - a.savedAt);
+  const dates = allDates();
+  el.innerHTML = sorted.map(m => {
+    const d = dates.find(x => x.num === m.num) || { num: m.num, emoji: '✨', oneliner: 'Date #' + m.num, hers: false };
+    const barClass = colorKey(d, 'bar');
+    const stars = '⭐'.repeat(m.rating) + '☆'.repeat(5 - m.rating);
+    return `<div class="mem-card">
+      <div class="mem-bar ${barClass}"></div>
+      <div class="mem-body">
+        <div class="mem-meta">
+          <div class="mem-num">${d.num}</div>
+          <div class="mem-line">${d.emoji} ${d.oneliner}</div>
+          ${d.hers ? '<span class="her-chip">HER PICK</span>' : ''}
+        </div>
+        ${m.photo ? `<img class="mem-photo" src="${m.photo}" alt="photo">` : ''}
+        ${m.note  ? `<div class="mem-note">"${m.note}"</div>` : ''}
+        <div class="mem-rating-row">
+          <span class="r-label">Rating</span>
+          <span style="font-size:16px">${stars}</span>
+          <span class="r-num">${m.rating}/5</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openMemForm() {
+  const dates = allDates();
+  const sel = document.getElementById('memSelect');
+  const unlocked = dates.filter(d => state.unlocked[d.num]);
+  sel.innerHTML = unlocked.length
+    ? unlocked.map(d => `<option value="${d.num}">#${d.num} ${d.emoji} — ${d.oneliner.substring(0,38)}…</option>`).join('')
+    : '<option disabled>No unlocked dates yet</option>';
+  formRating = 0; formPhotoData = null;
+  document.getElementById('memNote').value = '';
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('photoDropArea').style.display = 'flex';
+  renderFormStars(0);
+  document.getElementById('memOverlay').classList.add('open');
+}
+
+function closeMemModal() { document.getElementById('memOverlay').classList.remove('open'); }
+
+function handlePhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    formPhotoData = e.target.result;
+    const prev = document.getElementById('photoPreview');
+    prev.src = formPhotoData; prev.style.display = 'block';
+    document.getElementById('photoDropArea').style.display = 'none';
+  };
+  r.readAsDataURL(file);
+}
+
+function renderFormStars(n) {
+  document.getElementById('formStars').innerHTML = [1,2,3,4,5].map(i =>
+    `<button class="star-btn" onclick="setRating(${i})">${i <= n ? '⭐' : '☆'}</button>`
+  ).join('');
+}
+
+function setRating(n) { formRating = n; renderFormStars(n); }
+
+function saveMem() {
+  const num = parseInt(document.getElementById('memSelect').value);
+  if (isNaN(num)) return;
+  const mem = { num, note: document.getElementById('memNote').value.trim(), photo: formPhotoData, rating: formRating, savedAt: Date.now() };
+  const idx = state.memories.findIndex(m => m.num === num);
+  if (idx >= 0) state.memories[idx] = mem; else state.memories.push(mem);
+  saveState(); burst(); closeMemModal();
+  // switch to timeline tab
+  document.querySelectorAll('.nav-btn')[1].dispatchEvent(new MouseEvent('click'));
+}
+
+// ============================================================
+// RANKINGS
+// ============================================================
+function renderRankings() {
+  const el = document.getElementById('rankingsContent');
+  const rated = state.memories.filter(m => m.rating > 0);
+  if (!rated.length) {
+    el.innerHTML = `<div class="empty-card"><div class="ee">🏆</div><h3>No ratings yet</h3><p>Rate your dates in Our Story to build your personal leaderboard.</p></div>`;
+    return;
+  }
+  const dates = allDates();
+  const medals = ['🥇','🥈','🥉'];
+  const scored = rated.map(m => {
+    const d = dates.find(x => x.num === m.num) || { num: m.num, emoji: '✨', oneliner: 'Date #' + m.num, hers: false };
+    return { ...m, d, score: m.rating * 20 };
+  }).sort((a, b) => b.score - a.score);
+
+  el.innerHTML = scored.map((m, i) => {
+    const fillClass = colorKey(m.d, 'bar');
+    return `<div class="rank-item rank-${i + 1}">
+      <div class="rank-pos">${medals[i] || (i + 1)}</div>
+      <div class="rank-info">
+        <div class="rank-line">${m.d.emoji} ${m.d.oneliner}</div>
+        <div class="rank-sub">Date #${m.num} · ${m.rating}/5 stars${m.d.hers ? ' · Her pick 💜' : ''}</div>
+        <div class="rank-bar"><div class="rank-fill ${fillClass}" style="width:${m.score}%"></div></div>
+      </div>
+      <div class="rank-score-box">
+        <div class="rank-score-n">${m.score}</div>
+        <div class="rank-score-l">SCORE</div>
+      </div>
+    </div>`;
+  }).join('') + `<p style="text-align:center;color:var(--light);font-size:12px;margin-top:20px">Rankings update as you rate more dates ✨</p>`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+initConfetti();
+renderEnvelopes();
+</script>
+</body>
+</html>
