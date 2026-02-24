@@ -386,6 +386,18 @@
       <textarea id="addClue" rows="2" placeholder="Hint at what you're thinking without giving it all away..."></textarea>
     </div>
 
+    <div class="fgroup">
+      <label>Clue Code</label>
+      <input id="addCodeClue" placeholder="e.g. SHELLS" style="letter-spacing:3px;text-transform:uppercase">
+      <div class="hint">This is the code you'll text mid-week to unlock the clue.</div>
+    </div>
+
+    <div class="fgroup">
+      <label>Reveal Code</label>
+      <input id="addCodeReveal" placeholder="e.g. S3" style="letter-spacing:3px;text-transform:uppercase">
+      <div class="hint">This is the code you'll text the night of to reveal the date.</div>
+    </div>
+
     <div class="factions">
       <button class="btn-ghost" onclick="closeAddModal()">Cancel</button>
       <button class="btn-primary" onclick="saveHerDate()">Add it 💜</button>
@@ -763,6 +775,8 @@ function openAddModal() {
   document.getElementById('addOneliner').value = '';
   document.getElementById('addLocation').value = '';
   document.getElementById('addClue').value = '';
+  document.getElementById('addCodeClue').value = '';
+  document.getElementById('addCodeReveal').value = '';
   document.getElementById('sug-heidi').classList.add('picked');
   document.getElementById('sug-henry').classList.remove('picked');
   buildEmojiKeyboard();
@@ -799,17 +813,21 @@ async function saveHerDate() {
   if (!oneliner) { alert('Give the date a name first!'); return; }
   const clue = document.getElementById('addClue').value.trim();
   const location = document.getElementById('addLocation').value.trim();
+  const codeClue = document.getElementById('addCodeClue').value.trim().toUpperCase();
+  const codeReveal = document.getElementById('addCodeReveal').value.trim().toUpperCase();
+  if (!codeClue) { alert('Add a clue code so you can unlock it later!'); return; }
+  if (!codeReveal) { alert('Add a reveal code so you can reveal it on the night!'); return; }
   const nextNum = Math.max(...allDates().map(d => d.num), 0) + 1;
   const newDate = {
     num: nextNum,
     emoji: pickedEmoji,
     location: location || null,
     hamptons: /hamptons|east hampton|southampton|montauk|amagansett|bridgehampton/i.test(location),
-    clue: clue || 'A surprise from me — stay tuned!',
+    clue: clue || 'A surprise — stay tuned!',
     oneliner,
     suggestedBy: pickedSuggestor,
-    codeClue:   'HER' + nextNum,
-    codeReveal: 'HR'  + nextNum,
+    codeClue,
+    codeReveal,
     hers: true,
   };
   state.herDates.push(newDate);
