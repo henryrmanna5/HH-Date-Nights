@@ -208,7 +208,11 @@
   .mem-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
   .mem-num { width: 34px; height: 34px; border-radius: 50%; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; flex-shrink: 0; }
   .mem-line { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; flex: 1; line-height: 1.3; }
-  .her-chip { font-size: 10px; background: #f0e8ff; color: var(--lavender); border-radius: 100px; padding: 3px 10px; font-weight: 700; letter-spacing: 1px; }
+  .loc-toggle { display: flex; gap: 8px; }
+  .loc-opt { flex: 1; padding: 10px; text-align: center; border: 2px solid #eee; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--mid); }
+  .loc-opt.picked { border-color: var(--lavender); background: #f5edff; color: var(--lavender); }
+  .chip-heidi { font-size: 10px; background: #f0e8ff; color: var(--lavender); border-radius: 100px; padding: 3px 10px; font-weight: 700; letter-spacing: 1px; }
+  .chip-henry { font-size: 10px; background: #e8e8f0; color: var(--dark); border-radius: 100px; padding: 3px 10px; font-weight: 700; letter-spacing: 1px; }
   .mem-photo { width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; margin: 10px 0; display: block; }
   .mem-note { font-size: 15px; color: var(--mid); line-height: 1.65; font-style: italic; margin: 8px 0; }
   .mem-rating-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
@@ -346,11 +350,19 @@
   </div>
 </div>
 
-<!-- Add her date modal -->
+<!-- Add date modal -->
 <div class="overlay" id="addOverlay" onclick="if(event.target===this)closeAddModal()">
   <div class="add-modal">
     <h2>Add Your Own 💜</h2>
     <p class="sub">Got a date idea? Drop it in and we'll make it happen.</p>
+
+    <div class="fgroup">
+      <label>Whose idea is this?</label>
+      <div class="loc-toggle">
+        <div class="loc-opt picked" id="sug-heidi" onclick="pickSuggestor('heidi')">💜 Heidi</div>
+        <div class="loc-opt" id="sug-henry" onclick="pickSuggestor('henry')">🖤 Henry</div>
+      </div>
+    </div>
 
     <div class="fgroup">
       <label>What's the vibe? *</label>
@@ -370,7 +382,7 @@
     </div>
 
     <div class="fgroup">
-      <label>Write yourself a clue <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <label>Write a clue <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
       <textarea id="addClue" rows="2" placeholder="Hint at what you're thinking without giving it all away..."></textarea>
     </div>
 
@@ -544,6 +556,7 @@ function showLoading(on) {
 let formRating = 0;
 let formPhotoData = null;
 let pickedEmoji = '🌸';
+let pickedSuggestor = 'heidi';
 
 // All dates = base + her additions
 function allDates() {
@@ -621,7 +634,7 @@ function renderEnvelopes() {
     let statusLabel, statusClass, preview;
     if (status === 'sealed') {
       statusLabel = '● SEALED'; statusClass = 's-sealed';
-      preview = d.hers ? 'Her idea — locked and waiting...' : 'Unlock with your weekly code...';
+      preview = d.hers ? `${d.suggestedBy === 'henry' ? 'Henry' : 'Heidi'}'s idea — locked and waiting...` : 'Unlock with your weekly code...';
     } else if (status === 'clue') {
       statusLabel = '● CLUE UNLOCKED'; statusClass = 's-clue';
       preview = 'You have a clue — tap to read';
@@ -639,7 +652,7 @@ function renderEnvelopes() {
           <div class="env-flap ${fClass}"></div>
           ${isSealed ? '<span class="env-badge badge-lock">🔒 sealed</span>' : ''}
           ${d.hamptons && !d.hers ? '<span class="env-badge badge-hampton">🌊 Hamptons</span>' : ''}
-          ${d.hers ? '<span class="env-badge badge-her">Her Pick 💜</span>' : ''}
+          ${d.hers ? `<span class="env-badge badge-her">${d.suggestedBy === 'henry' ? '🖤 Henry' : '💜 Heidi'}</span>` : ''}
           ${!isSealed ? `<span class="env-badge badge-stage">${status === 'clue' ? '🔍 Clue inside' : '✨ Revealed'}</span>` : ''}
           <div class="env-number">${d.num}</div>
           <div class="env-emoji">${d.emoji}</div>
@@ -746,11 +759,20 @@ const EMOJI_KEYBOARD = {
 
 function openAddModal() {
   pickedEmoji = '🌸';
+  pickedSuggestor = 'heidi';
   document.getElementById('addOneliner').value = '';
   document.getElementById('addLocation').value = '';
   document.getElementById('addClue').value = '';
+  document.getElementById('sug-heidi').classList.add('picked');
+  document.getElementById('sug-henry').classList.remove('picked');
   buildEmojiKeyboard();
   document.getElementById('addOverlay').classList.add('open');
+}
+
+function pickSuggestor(who) {
+  pickedSuggestor = who;
+  document.getElementById('sug-heidi').classList.toggle('picked', who === 'heidi');
+  document.getElementById('sug-henry').classList.toggle('picked', who === 'henry');
 }
 
 function closeAddModal() {
@@ -785,6 +807,7 @@ async function saveHerDate() {
     hamptons: /hamptons|east hampton|southampton|montauk|amagansett|bridgehampton/i.test(location),
     clue: clue || 'A surprise from me — stay tuned!',
     oneliner,
+    suggestedBy: pickedSuggestor,
     codeClue:   'HER' + nextNum,
     codeReveal: 'HR'  + nextNum,
     hers: true,
@@ -815,7 +838,7 @@ function renderTimeline() {
         <div class="mem-meta">
           <div class="mem-num">${d.num}</div>
           <div class="mem-line">${d.emoji} ${d.oneliner}</div>
-          ${d.hers ? '<span class="her-chip">HER PICK</span>' : ''}
+          ${d.hers ? `<span class="${d.suggestedBy === 'henry' ? 'chip-henry' : 'chip-heidi'}">${d.suggestedBy === 'henry' ? '🖤 HENRY' : '💜 HEIDI'}</span>` : ''}
         </div>
         ${m.photo ? `<img class="mem-photo" src="${m.photo}" alt="photo">` : ''}
         ${m.note  ? `<div class="mem-note">"${m.note}"</div>` : ''}
@@ -900,7 +923,7 @@ function renderRankings() {
       <div class="rank-pos">${medals[i] || (i + 1)}</div>
       <div class="rank-info">
         <div class="rank-line">${m.d.emoji} ${m.d.oneliner}</div>
-        <div class="rank-sub">Date #${m.num} · ${m.rating}/5 stars${m.d.hers ? ' · Her pick 💜' : ''}</div>
+        <div class="rank-sub">Date #${m.num} · ${m.rating}/5 stars${m.d.hers ? ` · ${m.d.suggestedBy === 'henry' ? '🖤 Henry' : '💜 Heidi'}'s pick` : ''}</div>
         <div class="rank-bar"><div class="rank-fill ${fillClass}" style="width:${m.score}%"></div></div>
       </div>
       <div class="rank-score-box">
